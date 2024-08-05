@@ -1,0 +1,51 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+AWSTemplateFormatVersion: "2010-09-09"
+Description: This template creates the StackSet Admin role for the Governance account
+Transform: AWS::LanguageExtensions
+######################################################
+# Parameters
+######################################################
+Parameters:
+  MemberAccountIdList:
+    Type: CommaDelimitedList
+    Description: List of member account IDs of the data solution.
+
+#####################################################
+# Resources
+#####################################################
+Resources:
+
+  StackSetAdminRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "DzDataMeshCfnStackSetAdminRole"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+
+  # YAML Formatting is correct
+  'Fn::ForEach::MemberAccountIds':
+    - MemberAccountId
+    - !Ref MemberAccountIdList
+    - StackSetAdminRolePolicy${MemberAccountId}:
+        Type: AWS::IAM::Policy
+        Properties:
+          PolicyName: !Sub "AssumeRoleDzDataMeshCfnStackSetAdminRole${MemberAccountId}"
+          Roles:
+            - !Ref StackSetAdminRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource:
+                  - !Sub "arn:aws:iam::${MemberAccountId}:role/DzDataMeshCfnStackSetExecutionRole"
+

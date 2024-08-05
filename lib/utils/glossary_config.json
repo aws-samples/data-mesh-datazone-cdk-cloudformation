@@ -1,0 +1,21 @@
+{
+  "projectName": "Admin",
+  "projectGlossaries": [
+    {
+      "GlossaryName": "PII Data",
+      "GlossaryDescription": "If data source contains PII attributes",
+      "GlossaryTerms": [
+        {
+          "Name": "Yes",
+          "ShortDescription": "Yes",
+          "LongDescription": "Yes Glossary Term"
+        },
+        {
+          "Name": "No",
+          "ShortDescription": "No",
+          "LongDescription": "No Glossary Term"
+        }
+      ]
+    }
+  ]
+}

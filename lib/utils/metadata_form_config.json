@@ -1,0 +1,20 @@
+{
+  "projectName": "Admin",
+  "projectMetadataForms": [
+    {
+      "FormName": "ScheduleDataRefresh",
+      "FormDescription": "Form for data refresh schedule",
+      "FormSmithyModel": "@amazon.datazone#displayname(defaultName: \"Data Refresh Schedule\")\nstructure ScheduleDataRefresh {\n    @documentation(\"Schedule of Data Refresh\")\n    @required\n    @amazon.datazone#searchable\n    @amazon.datazone#displayname(defaultName: \"Data Refresh Schedule\")\n    data_refresh_schedule: String\n}"
+    },
+    {
+      "FormName": "PIIData",
+      "FormDescription": "Form to indicate whether data contains PII information",
+      "FormSmithyModel": "@amazon.datazone#displayname(defaultName: \"PII Data\")\nstructure PIIData {\n    @documentation(\"Field Name with Personal Identifiable Information (PII) information\")\n    @required\n    @amazon.datazone#displayname(defaultName: \"Contains PII Data\")\n    if_pii_data: Boolean\n}"
+    },
+    {
+      "FormName": "DataOwnership",
+      "FormDescription": "Form to indicate ownership of data product",
+      "FormSmithyModel": "@amazon.datazone#displayname(defaultName: \"Data Ownership\")\nstructure DataOwnership {\n    @documentation(\"Name of the data owner\")\n    @required\n    @amazon.datazone#searchable\n    @amazon.datazone#displayname(defaultName: \"Data Product Owner Name\")\n    data_product_owner_name: String\n\n    @documentation(\"Contact information of the data owner\")\n    @required\n    @amazon.datazone#searchable\n    @amazon.datazone#displayname(defaultName: \"Data Product Owner Contact Information\")\n    data_product_owner_contact_info: String\n\n    @documentation(\"Business unit of the data owner\")\n    @required\n    @amazon.datazone#searchable\n    @amazon.datazone#displayname(defaultName: \"Business Unit of The Data Product Owner\")\n    data_product_owner_business_unit: String\n}"
+    }
+  ]
+}

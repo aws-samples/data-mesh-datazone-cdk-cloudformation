@@ -1,0 +1,4 @@
+-i https://pypi.org/simple
+aws_lambda_powertools==2.38.1
+boto3==1.34.42
+aws-xray-sdk==2.13.1

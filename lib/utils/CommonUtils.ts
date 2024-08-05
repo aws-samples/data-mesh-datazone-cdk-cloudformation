@@ -1,0 +1,60 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: MIT-0
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ * software and associated documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+import { Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { Policy } from 'aws-cdk-lib/aws-iam';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { Construct } from 'constructs';
+import { Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
+export class CommonUtils {
+
+  static getLambdaExecutionRole(scope: Construct, lambdaName: string, lambdaPolicy: Policy) {
+
+    const lambdaRole = new iam.Role(scope, `${lambdaName}-Role`, {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+    });
+
+    lambdaPolicy.attachToRole(lambdaRole);
+
+    return lambdaRole;
+  }
+
+  static getLambdaCoreProperties(timeoutMinutes?: number) {
+    return {
+      memorySize: 256,
+      timeout: timeoutMinutes ? Duration.minutes(timeoutMinutes) : Duration.minutes(10),
+      runtime: lambda.Runtime.PYTHON_3_12,
+    };
+  }
+
+  static createS3Bucket(scope: Construct, bucketIdentifier: string, bucketName: string) {
+    return new Bucket(scope, bucketIdentifier, {
+      encryption: BucketEncryption.S3_MANAGED,
+      bucketName: bucketName,
+      enforceSSL: true,
+      blockPublicAccess: {
+        blockPublicAcls: true,
+        blockPublicPolicy: true,
+        ignorePublicAcls: true,
+        restrictPublicBuckets: true,
+      },
+      removalPolicy: RemovalPolicy.RETAIN,
+      versioned: true,
+    });
+  }
+}

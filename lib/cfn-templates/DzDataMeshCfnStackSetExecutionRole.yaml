@@ -1,0 +1,246 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template creates the StackSet Execution roles for the member
+  accounts (manual deployment)
+#####################################################
+# Parameters
+#####################################################
+Parameters:
+  DataMeshApplicationName:
+    Type: String
+    Description: Name of the data mesh application.
+
+  GovernanceAccountID:
+    Type: String
+    Description: Account ID of the governance account.
+
+  DataZoneKMSKeyID:
+    Type: String
+    Description: Identifier of the DataZone metadata KMS key.
+
+  NotificationQueueName:
+    Type: String
+    Description: Name of the SQS Notification Queue in the governance account
+
+#####################################################
+# Resources
+#####################################################
+Resources:
+
+  StackSetExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: DzDataMeshCfnStackSetExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${GovernanceAccountID}:role/DzDataMeshCfnStackSetAdminRole
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: KMSPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                  - kms:DescribeKey
+                Resource: !Sub arn:aws:kms:${AWS::Region}:${GovernanceAccountID}:key/${DataZoneKMSKeyID}
+        - PolicyName: DataZonePermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - datazone:ListEnvironmentBlueprints
+                  - datazone:PutEnvironmentBlueprintConfiguration
+                Resource: '*'
+        - PolicyName: SQSPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !Sub arn:aws:sqs:${AWS::Region}:${GovernanceAccountID}:${NotificationQueueName}
+              - Effect: Allow
+                Action:
+                  - sqs:TagQueue
+                  - sqs:UntagQueue
+                  - sqs:SetQueueAttributes
+                  - sqs:GetQueueAttributes
+                  - sqs:ListQueues
+                Resource: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:*
+              - Effect: Allow
+                Action:
+                  - sqs:CreateQueue
+                  - sqs:DeleteQueue
+                  - sqs:DeleteMessage
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                Resource: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:*
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/ApplicationName: !Sub ${DataMeshApplicationName}
+        - PolicyName: CFNPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:DetectStackDrift
+                  - cloudformation:DetectStackResourceDrift
+                  - cloudformation:DetectStackSetDrift
+                  - cloudformation:DescribeStackResourceDrifts
+                  - cloudformation:DescribeStackDrifts
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStacks
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:UpdateStackSet
+                  - cloudformation:GetTemplateSummary
+                Resource:
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stackset-target/*
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:type/resource/*
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stackset/*:*
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stack/*/*
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStackDriftDetectionStatus
+                  - cloudformation:CreateStackSet
+                Resource: '*'
+        - PolicyName: LambdaPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:GetFunction
+                  - lambda:GetLayerVersion
+                  - lambda:GetFunctionConfiguration
+                  - lambda:GetRuntimeManagementConfig
+                  - lambda:GetFunctionCodeSigningConfig
+                  - lambda:TagResource
+                  - lambda:UntagResource
+                  - lambda:ListTags
+                Resource:
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:*:*
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
+              - Effect: Allow
+                Action:
+                  - lambda:CreateFunction
+                  - lambda:DeleteFunction
+                  - lambda:DeleteLayerVersion
+                  - lambda:InvokeFunction
+                  - lambda:UpdateFunctionCode
+                  - lambda:UpdateFunctionConfiguration
+                Resource:
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:*:*
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/ApplicationName: !Sub ${DataMeshApplicationName}
+              - Effect: Allow
+                Action:
+                  - lambda:PublishLayerVersion
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:*
+              - Effect: Allow
+                Action:
+                  - lambda:CreateEventSourceMapping
+                  - lambda:GetEventSourceMapping
+                  - lambda:UpdateEventSourceMapping
+                  - lambda:DeleteEventSourceMapping
+                Resource: '*'
+        - PolicyName: CWPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+        - PolicyName: RAMPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ram:AcceptResourceShareInvitation
+                Resource: !Sub arn:aws:ram:${AWS::Region}:${GovernanceAccountID}:resource-share-invitation/*
+              - Effect: Allow
+                Action:
+                  - ram:GetResourceShareInvitations
+                Resource: '*'
+        - PolicyName: StoragePermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:GetLifecycleConfiguration
+                  - s3:GetInventoryConfiguration
+                  - s3:GetBucketWebsite
+                  - s3:GetBucketLogging
+                  - s3:CreateBucket
+                  - s3:GetAccelerateConfiguration
+                  - s3:GetBucketVersioning
+                  - s3:GetBucketAcl
+                  - s3:GetBucketNotification
+                  - s3:DeleteBucketPolicy
+                  - s3:GetBucketPolicy
+                  - s3:GetReplicationConfiguration
+                  - s3:PutEncryptionConfiguration
+                  - s3:GetBucketObjectLockConfiguration
+                  - s3:GetEncryptionConfiguration
+                  - s3:GetIntelligentTieringConfiguration
+                  - s3:GetBucketCORS
+                  - s3:GetAnalyticsConfiguration
+                  - s3:PutBucketPolicy
+                  - s3:GetMetricsConfiguration
+                  - s3:GetBucketOwnershipControls
+                  - s3:DeleteBucket
+                  - s3:PutBucketTagging
+                  - s3:GetBucketTagging
+                  - s3:DeleteBucketTagging
+                  - s3:PutBucketPublicAccessBlock
+                  - s3:PutBucketVersioning
+                Resource: arn:aws:s3:::*
+              - Effect: Allow
+                Action:
+                  - s3:ListAllMyBuckets
+                Resource: '*'
+        - PolicyName: IAMPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:ListAttachedRolePolicies
+                  - iam:ListRolePolicies
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:PassRole
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/*
+              - Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:AttachRolePolicy
+                  - iam:PutRolePolicy
+                  - iam:DetachRolePolicy
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/*
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/ApplicationName: !Sub ${DataMeshApplicationName}
