@@ -75,7 +75,7 @@ The following diagram displays the data mesh reference architecture based on Ama
 
 
 ### Prerequisites
-* Minimum two active Amazon Web Services (AWS) accounts. One for the Central Governance account and another for the member account. You’ll need AWS Administrator credentials for the Central Governance account on your deployment environment.
+* Minimum two active Amazon Web Services (AWS) accounts. One for the Central Governance account and another for the member account. You’ll need AWS Administrator credentials for the Central Governance account on your development environment.
 
 * AWS Command Line Interface (CLI) to manage your AWS services from the command line. Install the AWS CLI by following the instructions in the AWS documentation (https://aws.amazon.com/cli/).
 
@@ -87,14 +87,14 @@ The following diagram displays the data mesh reference architecture based on Ama
 npm install -g aws-cdk
 ```
 
-* Python is installed in your deployment environment. This solution supports python version 3.12.
+* Python is installed in your development environment. This solution supports python version 3.12.
 
-* TypeScript is installed in your deployment environment. Install it globally using npm compiler.
+* TypeScript is installed in your development environment. Install it globally using npm compiler.
 
 ```bash
 npm install -g typescript
 ```
-* Docker is installed in your deployment environment.
+* Docker is installed in your development environment.
 
 
 ### Deploy Solution
