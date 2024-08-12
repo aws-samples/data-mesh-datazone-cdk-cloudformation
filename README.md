@@ -131,7 +131,7 @@ See [Deploy resources in the Central Governance Account](docs/deploy_to_central_
 
 #### 3. Onboard new member account
 
-The data mesh solution based on Amazon DataZone supports organizations to onboard new member accounts as their data mesh grows or as new business units or partners join the ecosystem. The solution provides a streamlined approach to onboard these new member accounts and seamlessly integrate them into the publication and subscription workflows.
+The data mesh solution based on Amazon DataZone supports organizations to onboard new member accounts as their data mesh grows or as new business units or partners join the ecosystem. The solution provides a streamlined approach to onboard these new member accounts onto the data mesh.
 
 Here's how the solution facilitates easy onboarding of new member accounts:
 
@@ -139,7 +139,7 @@ Here's how the solution facilitates easy onboarding of new member accounts:
 
 2. **Automated Account Registration**: Once the new member account details are added to the configuration file, the solution automates association of the account to the Amazon DataZone domain. 
 
-3. **Amazon DataZone Member Projects and Environments**: The solution deploys the Amazon DataZone projects and environments linked to the member accounts. It uses Data Lake blueprint to create the Amazon DataZone environment.
+3. **Amazon DataZone Member Projects and Environments**: The solution deploys the Amazon DataZone projects and environments linked to the member accounts. It uses data lake blueprint to create the Amazon DataZone environment.
 
 See [Onboard new member account](docs/onboard_member_account.md) for more details.
 
