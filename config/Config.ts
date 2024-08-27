@@ -49,6 +49,6 @@ export const DZ_MEMBER_ACCOUNT_CONFIG: memberAccountConfig = {
   '123456789012' : {
     PROJECT_NAME: 'TEST-PROJECT-123456789012',
     PROJECT_DESCRIPTION: 'TEST-PROJECT-123456789012',
-    PROJECT_EMAIL: 'memeber+project@acmecorp.domain'
+    PROJECT_EMAIL: 'member+project@acmecorp.domain'
   }
 }*/
