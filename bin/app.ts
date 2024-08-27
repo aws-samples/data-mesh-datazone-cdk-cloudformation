@@ -44,7 +44,7 @@ const app = new cdk.App();
 Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
 
 Tags.of(app).add('ApplicationName', DZ_APPLICATION_NAME);
-Tags.of(app).add('ApplicationId', '12345');
+Tags.of(app).add('ApplicationId', 'acmecorp-app-1234');
 Tags.of(app).add('PersonalData', 'false');
 
 const dzDataMeshHelperStack = new DzDataMeshHelperStack(
