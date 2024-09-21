@@ -9,7 +9,7 @@ DZ_DOMAIN_NAME - Name of the Amazon DataZone domain
 DZ_DOMAIN_DESCRIPTION - Description of the Amazon DataZone domain
 DZ_DOMAIN_TAG - Tag of the Amazon DataZone domain
 DZ_ADMIN_PROJECT_NAME - Name of the Amazon DataZone project for administrators
-DZ_ADMIN_PROJECT_DESCRIPTION - Descirption of the Amazon DataZone project for administrators
+DZ_ADMIN_PROJECT_DESCRIPTION - Description of the Amazon DataZone project for administrators
 CDK_EXEC_ROLE_ARN - ARN of the cdk execution role
 DZ_ADMIN_ROLE_ARN - ARN of the administrator role
 ```
