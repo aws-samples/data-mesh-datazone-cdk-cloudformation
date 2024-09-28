@@ -19,7 +19,7 @@
 
 ## Overview
 
-This repository contains the AWS CDK and AWS CloudFormation infrastructure to build an enterprise data mesh with Amazon DataZone. The data mesh is a decentralized organizational and data management framework that aims to improve data accessibility, quality, and governance across the organization.
+This repository contains the AWS CDK and AWS CloudFormation infrastructure to build an enterprise data mesh with Amazon DataZone. The data mesh is a decentralized organizational and data management framework that aims to improve data accessibility, quality, and governance across the organization. See this AWS prescriptive guidance for more details: [Build an enterprise data mesh with Amazon DataZone, AWS CDK, and AWS CloudFormation](https://docs.aws.amazon.com/prescriptive-guidance/latest/patterns/build-enterprise-data-mesh-amazon-data-zone.html). 
 
 ## Target Audience
 
