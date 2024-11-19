@@ -14,7 +14,7 @@ git clone https://github.com/aws-samples/data-mesh-datazone-cdk-cloudformation.g
 ```bash
  python3 -m venv .venv
  source .venv/bin/activate
- pip -r install requirements.txt
+ pip install -r requirements.txt
 ```
 
 4. CDK bootstrap the Central Governance Account.
