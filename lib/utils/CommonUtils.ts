@@ -38,7 +38,7 @@ export class CommonUtils {
     return {
       memorySize: 256,
       timeout: timeoutMinutes ? Duration.minutes(timeoutMinutes) : Duration.minutes(10),
-      runtime: lambda.Runtime.PYTHON_3_12,
+      runtime: lambda.Runtime.PYTHON_3_13,
     };
   }
 
