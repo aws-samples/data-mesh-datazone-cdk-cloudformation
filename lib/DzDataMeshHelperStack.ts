@@ -262,7 +262,7 @@ export class DzDataMeshHelperStack extends cdk.Stack {
         path.join(__dirname, '../src/lambda-layers'),
         {
           bundling: {
-            image: lambda.Runtime.PYTHON_3_12.bundlingImage,
+            image: lambda.Runtime.PYTHON_3_13.bundlingImage,
             command: [
               'bash',
               '-c',
@@ -271,7 +271,7 @@ export class DzDataMeshHelperStack extends cdk.Stack {
           },
         },
       ),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_13],
       layerVersionName: 'utils',
       description: 'Common utilities for Data Mesh Solution',
     });
