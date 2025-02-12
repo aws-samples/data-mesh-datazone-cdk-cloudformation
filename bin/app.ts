@@ -28,6 +28,8 @@ import {
   DZ_DOMAIN_NAME,
   DZ_DOMAIN_TAG,
   DZ_STAGE_NAME,
+  CDK_EXEC_ROLE_ARN,
+  DZ_DOMAIN_OWNER_GROUP_ID,
 } from '../config/Config';
 import { DzDataMeshGovStack } from '../lib/DzDataMeshGovStack';
 import { DzDataMeshHelperStack } from '../lib/DzDataMeshHelperStack';
@@ -151,6 +153,15 @@ const dzDataMeshMemberStack = new DzDataMeshMemberStack(
   },
 );
 dzDataMeshMemberStack.addDependency(dzDataMeshGovStack);
+
+const dzDataMeshDomainOwnerStack = new DzDataMeshDomainOwnerStack(app, 'DzDataMeshDomainOwnerStack', {
+  applicationName: DZ_APPLICATION_NAME,
+  domainId: dzDataMeshGovStack.domainId,
+  CDKExecRoleARN: CDK_EXEC_ROLE_ARN,
+  dzDomainUnitownerGroup: DZ_DOMAIN_OWNER_GROUP_ID,
+  stageName: DZ_STAGE_NAME,
+},);  
+dzDataMeshDomainOwnerStack.addDependency(dzDataMeshGovStack);   
 
 const dzDataMeshMemberEnvStack = new DzDataMeshMemberEnvStack(
   app,
