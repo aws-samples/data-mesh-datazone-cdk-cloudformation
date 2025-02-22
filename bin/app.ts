@@ -41,6 +41,7 @@ import { DzDataMeshEncryptionStack } from '../lib/DzDataMeshEncryptionStack';
 import { DzDataMeshMonitoringStack } from '../lib/DzDataMeshMonitoringStack';
 import { Aspects, Tags } from 'aws-cdk-lib';
 import { DzDataMeshMemberEnvStack } from '../lib/DzDataMeshMemberEnvStack';
+import { DzDataMeshDomainOwnerStack} from "../lib/DzDataMeshDomainOwnerStack";
 
 const app = new cdk.App();
 Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
@@ -157,8 +158,10 @@ dzDataMeshMemberStack.addDependency(dzDataMeshGovStack);
 const dzDataMeshDomainOwnerStack = new DzDataMeshDomainOwnerStack(app, 'DzDataMeshDomainOwnerStack', {
   applicationName: DZ_APPLICATION_NAME,
   domainId: dzDataMeshGovStack.domainId,
+  lambdaLayerVersionArnParameterName:
+    dzDataMeshHelperStack.lambdaLayerVersionArnParameterName,
   CDKExecRoleARN: CDK_EXEC_ROLE_ARN,
-  dzDomainUnitownerGroup: DZ_DOMAIN_OWNER_GROUP_ID,
+  dzDomainUnitOwnerGroup: DZ_DOMAIN_OWNER_GROUP_ID,
   stageName: DZ_STAGE_NAME,
 },);  
 dzDataMeshDomainOwnerStack.addDependency(dzDataMeshGovStack);   
