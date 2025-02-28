@@ -29,7 +29,6 @@ The target audience of this solution are data engineers, cloud engineers, cloud 
 
 The key features of the solution are: 
 
-
 1. **Data Governance Framework**: The solution enables the implementation of data governance guardrails. For example, by enabling the management of Amazon DataZone glossaries and metadata forms, the solution ensures consistency of business metadata in your organization.
 2. **Streamlined Project and User Management**: The solution helps create Amazon DataZone projects and provides an easy way to assign users to their corresponding Amazon DataZone project(s). This simplifies access management and facilitates collaboration across business units of your organization.
 3. **Configuration-Driven Environment Setup**: The solution offers a configuration-driven approach to create Amazon DataZone resources, such as Amazon DataZone projects, environments, glossaries, and metadata forms. This allows for flexible and scalable deployment of project-specific resources and configurations.
