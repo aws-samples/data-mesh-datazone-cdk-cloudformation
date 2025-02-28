@@ -1,0 +1,487 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+Resources:
+  StackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      AdministrationRoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/DzDataMeshCfnStackSetAdminRole
+      Description: This is a StackSet to deploy the datazone infrastructure for bootstrapping the member account
+      ExecutionRoleName: DzDataMeshCfnStackSetExecutionRole
+      PermissionModel: SELF_MANAGED
+      Capabilities:
+        - "CAPABILITY_NAMED_IAM"
+      StackSetName: "StackSet-DataZone-DataMesh-Member"
+      TemplateBody: |
+        AWSTemplateFormatVersion: "2010-09-09"
+        Description: This template deploys the datazone infrastructure for bootstrapping the member account
+        #####################################################
+        # Parameters
+        #####################################################
+        Parameters:
+          GovernanceAccountID:
+            Type: String
+            Description: Account ID of the governance account.
+            Default: None
+
+          DomainIdentifier:
+            Type: String
+            Description: Identifier of the DataZone domain.
+            Default: None
+
+          AssociationResourceShareArn:
+            Type: String
+            Description: RAM Resource Share ARN of the DataZone association request.
+            Default: None
+
+          NotificationQueueUrl:
+            Type: String
+            Description: URL of the SQS Notification Queue in the governance account.
+            Default: None
+        #####################################################
+        # Resources
+        #####################################################
+        Resources:
+
+          # Blueprint bucket
+          DataZoneBluePrintBucket:
+            Type: AWS::S3::Bucket
+            Properties:
+              BucketName: !Sub "amazon-datazone-${AWS::AccountId}-${AWS::Region}-datamesh-cfn"
+              BucketEncryption:
+                ServerSideEncryptionConfiguration:
+                  - ServerSideEncryptionByDefault:
+                      SSEAlgorithm: "AES256"
+
+          DataZoneBluePrintBucketPolicy:
+            Type: AWS::S3::BucketPolicy
+            Properties:
+              Bucket: !Ref DataZoneBluePrintBucket
+              PolicyDocument:
+                Statement:
+                  - Action:
+                      - "s3:*"
+                    Effect: "Deny"
+                    Resource:
+                      - !GetAtt DataZoneBluePrintBucket.Arn
+                      - !Sub "${DataZoneBluePrintBucket.Arn}/*"
+                    Principal: "*"
+                    Condition:
+                      Bool:
+                        "aws:SecureTransport": "false"
+
+
+          # IAM DataZone role (provisioningRole) for the member accounts
+          MemberAccountProvisioningRole:
+            Type: AWS::IAM::Role
+            Properties:
+              RoleName: !Sub "AmazonDataZoneProvisioning-${GovernanceAccountID}"
+              AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                      "Service": "datazone.amazonaws.com"
+                    Action:
+                      - 'sts:AssumeRole'
+                    Condition:
+                      StringEquals:
+                        'aws:SourceAccount': !Ref GovernanceAccountID
+              Path: /service-role/
+              ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/AmazonDataZoneRedshiftGlueProvisioningPolicy
+
+
+          # IAM DataZone role (manageAccessRole) for the member accounts
+          MemberAccountManageAccessRole:
+            Type: AWS::IAM::Role
+            Properties:
+              RoleName: !Sub "AmazonDataZoneGlueAccess-${AWS::Region}-${DomainIdentifier}"
+              AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                      "Service": "datazone.amazonaws.com"
+                    Action:
+                      - 'sts:AssumeRole'
+                    Condition:
+                      StringEquals:
+                        'aws:SourceAccount': !Ref GovernanceAccountID
+                      ArnEquals:
+                        'aws:SourceArn': !Sub "arn:aws:datazone:${AWS::Region}:${GovernanceAccountID}:domain/${DomainIdentifier}"
+              Path: /service-role/
+              ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AmazonDataZoneGlueManageAccessRolePolicy
+
+          DataZoneBootstrapInfraQueue:
+            Type: AWS::SQS::Queue
+            Properties:
+              DelaySeconds: 120
+              VisibilityTimeout: 1800
+              QueueName: !Sub "datazone-${AWS::AccountId}-${AWS::Region}-datamesh"
+              SqsManagedSseEnabled: True
+
+
+
+          DataZoneBluePrintEnablerEventSourceMapping:
+            Type: AWS::Lambda::EventSourceMapping
+            Properties:
+              BatchSize: 10
+              Enabled: true
+              EventSourceArn: !GetAtt DataZoneBootstrapInfraQueue.Arn
+              FunctionName: !GetAtt DataZoneBluePrintEnabler.Arn
+
+
+          DataZoneAssociationRequestAcceptorCustomResource:
+            Type: 'Custom::DataZoneAssociationRequestAcceptor'
+            Properties:
+              ServiceToken: !GetAtt DataZoneAssociationRequestAcceptor.Arn
+              AssociationResourceShareArn: !Ref AssociationResourceShareArn
+
+          # cfnresponse is supported latest in python3.11
+          DataZoneAssociationRequestAcceptor:
+            Type: AWS::Lambda::Function
+            Properties:
+              Runtime: python3.11
+              MemorySize: 256
+              Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/DzDataMeshCfnStackSetExecutionRole"
+              Environment:
+                Variables:
+                  GOV_ACCOUNT_ID: !Ref GovernanceAccountID
+                  DOMAIN_ID: !Ref DomainIdentifier
+                  SQS_QUEUE_URL: !GetAtt DataZoneBootstrapInfraQueue.QueueUrl
+              Timeout: 300
+              Handler: index.lambda_handler
+              Code:
+                ZipFile: |
+                  # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+                  # SPDX-License-Identifier: MIT-0
+                  
+                  import os
+                  import logging
+                  import boto3
+                  from botocore.exceptions import ClientError
+                  import cfnresponse
+                  
+                  logger = logging.getLogger()
+                  logger.setLevel(logging.INFO)
+                  
+                  gov_account_id = os.environ["GOV_ACCOUNT_ID"]
+                  domain_id = os.environ["DOMAIN_ID"]
+                  sqs_queue_url = os.environ["SQS_QUEUE_URL"]
+                  ram_client = boto3.client("ram")
+                  sqs_client = boto3.client("sqs")
+                  
+                  
+                  def send_message_to_sqs(resource_share_arn, event, context):
+                    try:
+                      sqs_response = sqs_client.send_message(QueueUrl=sqs_queue_url,
+                                                             MessageBody=f"Resource share {resource_share_arn} accepted!")
+                    except ClientError as err:
+                      logger.error(f"Error sending message to SQS queue {sqs_queue_url}: {err}")
+                      cfnresponse.send(event, context, cfnresponse.FAILED, {"status": "Error sending message to SQS queue"},
+                                       "CustomResourcePhysicalID")
+                      raise err
+                  
+                    return sqs_response
+                  
+                  
+                  def on_create(association_resource_share_status, association_resource_share_arn, event, context):
+                    ram_response = {}
+                  
+                    if association_resource_share_status == "PENDING":
+                      ram_response = accept_resource_share_invite(association_resource_share_arn, event, context)
+                      logger.info(f"Resource share invitation accepted")
+                      sqs_response = send_message_to_sqs(association_resource_share_arn, event, context)
+                    elif association_resource_share_status == "ACCEPTED":
+                      logger.info(f"Resource share invitation already accepted!")
+                    else:
+                      logger.error(f"Resource share status {association_resource_share_status} not recognized!")
+                      cfnresponse.send(event, context, cfnresponse.FAILED, {"status": association_resource_share_status},
+                                       "CustomResourcePhysicalID")
+                      raise AttributeError(f"Resource share status {association_resource_share_status} not recognized!")
+                  
+                    return ram_response
+                  
+                  
+                  def on_update(association_resource_share_status, association_resource_share_arn, event, context):
+                    ram_response = {}
+                  
+                    if association_resource_share_status == "PENDING":
+                      ram_response = accept_resource_share_invite(association_resource_share_arn, event, context)
+                      logger.info(f"Resource share invitation accepted")
+                      sqs_response = send_message_to_sqs(association_resource_share_arn, event, context)
+                    elif association_resource_share_status == "ACCEPTED":
+                      logger.info(f"Resource share invitation already accepted!")
+                    else:
+                      logger.error(f"Resource share status {association_resource_share_status} not recognized!")
+                      cfnresponse.send(event, context, cfnresponse.FAILED, {"status": association_resource_share_status},
+                                       "CustomResourcePhysicalID")
+                      raise AttributeError(f"Resource share status {association_resource_share_status} not recognized!")
+                  
+                    return ram_response
+                  
+                  
+                  def accept_resource_share_invite(resource_share_arn, event, context):
+                    try:
+                      response = ram_client.get_resource_share_invitations(
+                        resourceShareArns=[resource_share_arn]
+                      )
+                      invitations = response.get("resourceShareInvitations", None)
+                      if invitations:
+                        resource_share_invite_arn = invitations[0]["resourceShareInvitationArn"]
+                        logger.info("Resource share invitation information received.")
+                      else:
+                        logger.error("No resource share invitations found.")
+                        cfnresponse.send(event, context, cfnresponse.SUCCESS, "No resource share invitations found.", "CustomResourcePhysicalID")
+                        return
+                  
+                      accept_response = ram_client.accept_resource_share_invitation(
+                        resourceShareInvitationArn=resource_share_invite_arn
+                      )
+                      logger.info("Resource share invitation accepted.")
+                      return accept_response
+                  
+                    except ClientError as err:
+                      error_message = err.response.get("Error", {}).get("Message", str(err))
+                      logger.error(f"Exception: {error_message}")
+                      cfnresponse.send(event, context, cfnresponse.FAILED, {"Error": error_message}, "CustomResourcePhysicalID")
+                      raise
+                  
+                  
+                  
+                  def get_resource_share_status(resource_share_arn, event, context):
+                    try:
+                      response = ram_client.get_resource_share_invitations(
+                        resourceShareArns=[resource_share_arn]
+                      )
+                      invitations = response.get("resourceShareInvitations", None)
+                      if invitations:
+                        resource_share_status = invitations[0]["status"]
+                        logger.info("Resource share status information received.")
+                        return resource_share_status
+                      else:
+                        logger.error("No resource share invitations found.")
+                        cfnresponse.send(event, context, cfnresponse.SUCCESS, "No resource share invitations found.", "CustomResourcePhysicalID")
+                    except ClientError as err:
+                      error_message = err.response.get("Error", {}).get("Message", str(err))
+                      logger.error(f"Exception: {error_message}")
+                      cfnresponse.send(event, context, cfnresponse.FAILED, {"Error": error_message}, "CustomResourcePhysicalID")
+                      raise
+                  
+                  
+                  
+                  def check_input_parameters(*parameters):
+                    for parameter in parameters:
+                      if not parameter:
+                        message = f"Invalid parameter value: {parameter}!"
+                        logger.error(message)
+                        return False
+                  
+                    return True
+                  
+                  
+                  def lambda_handler(event, context):
+                    response = {}
+                    request_type = event["RequestType"]
+                  
+                    # TODO: Generalize for Update and Delete
+                    are_valid_parameters = None
+                    association_resource_share_status = None
+                    association_resource_share_arn = None
+                    if request_type == "Create":
+                      association_resource_share_arn = event["ResourceProperties"]["AssociationResourceShareArn"]
+                      association_resource_share_status = get_resource_share_status(association_resource_share_arn, event, context)
+                  
+                      are_valid_parameters = check_input_parameters(request_type, association_resource_share_arn)
+                  
+                    if are_valid_parameters and request_type == "Create":
+                      on_create_response = on_create(association_resource_share_status, association_resource_share_arn, event, context)
+                      response = {
+                        'RequestType': 'Create',
+                        'HTTPStatusCode': on_create_response.get("ResponseMetadata", {}).get("HTTPStatusCode", "202"),
+                        'status': on_create_response.get("resourceShareInvitation", {}).get("status", ""),
+                        'resourceShareArn': on_create_response.get("resourceShareInvitation", {}).get("resourceShareArn", ""),
+                        'resourceShareName': on_create_response.get("resourceShareInvitation", {}).get("resourceShareName", ""),
+                        'receiverAccountId': on_create_response.get("resourceShareInvitation", {}).get("receiverAccountId", ""),
+                        'senderAccountId': on_create_response.get("resourceShareInvitation", {}).get("senderAccountId", "")
+                      }
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, response, "CustomResourcePhysicalID")
+                    elif request_type == "Delete":
+                      logger.info("Delete method not implemented yet. Manually delete the resources.")
+                      response = {
+                        'RequestType': 'Delete',
+                        'HTTPStatusCode': '200',
+                      }
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, response, "CustomResourcePhysicalID")
+                    elif request_type == "Update":
+                      logger.info("Update method not implemented yet.")
+                      response = {
+                        'RequestType': 'Update',
+                        'HTTPStatusCode': '200',
+                      }
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, response, "CustomResourcePhysicalID")
+                  
+                    return response
+
+
+
+              Description: Deploys the datazone infrastructure to accept the association request in the member account.
+
+
+
+          DataZoneBluePrintEnabler:
+            Type: AWS::Lambda::Function
+            Properties:
+              Runtime: python3.12
+              MemorySize: 256
+              Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/DzDataMeshCfnStackSetExecutionRole"
+              Environment:
+                Variables:
+                  GOV_ACCOUNT_ID: !Ref GovernanceAccountID
+                  DOMAIN_ID: !Ref DomainIdentifier
+                  SQS_QUEUE_URL: !GetAtt DataZoneBootstrapInfraQueue.QueueUrl
+                  NOTIFICATION_QUEUE_URL: !Ref NotificationQueueUrl
+              Timeout: 300
+              Handler: index.lambda_handler
+              Code:
+                ZipFile: |
+                  # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+                  # SPDX-License-Identifier: MIT-0
+                  
+                  import os
+                  import boto3
+                  import logging
+                  from botocore.exceptions import ClientError
+                  
+                  logger = logging.getLogger()
+                  logger.setLevel(logging.INFO)
+                  
+                  GOV_ACCOUNT_ID = os.environ["GOV_ACCOUNT_ID"]
+                  DOMAIN_ID = os.environ["DOMAIN_ID"]
+                  SQS_QUEUE_URL = os.environ["SQS_QUEUE_URL"]
+                  NOTIFICATION_QUEUE_URL = os.environ["NOTIFICATION_QUEUE_URL"]
+                  
+                  sqs_client = boto3.client("sqs")
+                  dz_client = boto3.client("datazone")
+                  
+                  
+                  def activate_datalake_blueprint(region, member_account_id, blueprint_bucket_name):
+                    try:
+                      list_environment_blueprints_response = dz_client.list_environment_blueprints(
+                        domainIdentifier=DOMAIN_ID,
+                        managed=True,
+                        name="DefaultDataLake"
+                      )
+                      logger.info("DefaultDataLake blueprint information received.")
+                    except ClientError as err:
+                      logger.error(f"Exception {err}")
+                      raise err
+                  
+                    datalake_environment_blueprint_id = list_environment_blueprints_response["items"][0]["id"]
+                  
+                    try:
+                      put_environment_blueprint_configuration_response = dz_client.put_environment_blueprint_configuration(
+                        domainIdentifier=DOMAIN_ID,
+                        enabledRegions=[
+                          region
+                        ],
+                        environmentBlueprintIdentifier=datalake_environment_blueprint_id,
+                        manageAccessRoleArn=f"arn:aws:iam::{member_account_id}:role/service-role/AmazonDataZoneGlueAccess-{region}-{DOMAIN_ID}",
+                        provisioningRoleArn=f"arn:aws:iam::{member_account_id}:role/service-role/AmazonDataZoneProvisioning-{GOV_ACCOUNT_ID}",
+                        regionalParameters={
+                          region: {
+                            "S3Location": f"s3://{blueprint_bucket_name}"
+                          }
+                        }
+                      )
+                      logger.info("DefaultDataLake blueprint activated!")
+                    except ClientError as err:
+                      logger.error(f"Exception {err}")
+                      raise err
+                  
+                    return put_environment_blueprint_configuration_response
+                  
+                  
+                  def delete_message(message):
+                    receipt_handle = message["receiptHandle"]
+                    body = message["body"]
+                  
+                    try:
+                      sqs_client.delete_message(
+                        QueueUrl=SQS_QUEUE_URL,
+                        ReceiptHandle=receipt_handle
+                      )
+                      logger.info(f"Deleting message with body: {body}")
+                    except ClientError as err:
+                      logger.error(f"Exception {err}")
+                      raise err
+                  
+                    return True
+                  
+                  
+                  def send_message_to_notification_queue(region, account_id, blueprint_id):
+                    try:
+                      sqs_response = sqs_client.send_message(QueueUrl=NOTIFICATION_QUEUE_URL,
+                                                             MessageAttributes={
+                                                               "messageType": {
+                                                                 "DataType": "String",
+                                                                 "StringValue": "MemberAccountAssociation"
+                                                               },
+                                                               "status": {
+                                                                 "DataType": "String",
+                                                                 "StringValue": "200"
+                                                               },
+                                                               "memberBlueprintId": {
+                                                                 "DataType": "String",
+                                                                 "StringValue": blueprint_id
+                                                               },
+                                                               "memberAccountId": {
+                                                                 "DataType": "String",
+                                                                 "StringValue": account_id
+                                                               },
+                                                               "memberRegion": {
+                                                                 "DataType": "String",
+                                                                 "StringValue": region
+                                                               },
+                                                             },
+                                                             MessageBody=f"BlueprintId {blueprint_id} for member account {account_id}"
+                                                                         f" and region {region} has been activated."
+                                                             )
+                      logger.info(f"Message sent to notification SQS queue: {NOTIFICATION_QUEUE_URL}")
+                    except ClientError as err:
+                      logger.error(f"Error sending message to notification SQS queue {NOTIFICATION_QUEUE_URL}: {err}")
+                      raise err
+                  
+                    return sqs_response
+                  
+                  
+                  def lambda_handler(event, context):
+                    current_region = context.invoked_function_arn.split(":")[3]
+                    current_account_id = context.invoked_function_arn.split(":")[4]
+                    blueprint_bucket_name = f"amazon-datazone-{current_account_id}-{current_region}-datamesh-cfn"
+                  
+                    logger.info("Received event")
+                    records = event["Records"]
+                  
+                    if len(records) == 1:
+                      logger.info("Message received.")
+                      activate_datalake_blueprint_response = activate_datalake_blueprint(current_region, current_account_id,
+                                                                                         blueprint_bucket_name)
+                      send_message_to_notification_queue(current_region, current_account_id, activate_datalake_blueprint_response["environmentBlueprintId"])
+                      delete_message_response = delete_message(records[0])
+                    elif len(records) > 1:
+                      logger.info("More than one message received!")
+                      return
+                    else:
+                      logger.info("No message received.")
+                      return
+                  
+                    return delete_message_response
+
+
+
+
+              Description: Enables the Datalake blueprint in the member account.
+
+

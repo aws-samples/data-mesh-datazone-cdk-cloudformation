@@ -29,7 +29,6 @@ The target audience of this solution are data engineers, cloud engineers, cloud 
 
 The key features of the solution are: 
 
-
 1. **Data Governance Framework**: The solution enables the implementation of data governance guardrails. For example, by enabling the management of Amazon DataZone glossaries and metadata forms, the solution ensures consistency of business metadata in your organization.
 2. **Streamlined Project and User Management**: The solution helps create Amazon DataZone projects and provides an easy way to assign users to their corresponding Amazon DataZone project(s). This simplifies access management and facilitates collaboration across business units of your organization.
 3. **Configuration-Driven Environment Setup**: The solution offers a configuration-driven approach to create Amazon DataZone resources, such as Amazon DataZone projects, environments, glossaries, and metadata forms. This allows for flexible and scalable deployment of project-specific resources and configurations.
@@ -79,7 +78,7 @@ The following diagram displays the data mesh reference architecture based on Ama
 
 * AWS Command Line Interface (CLI) to manage your AWS services from the command line. Install the AWS CLI by following the instructions in the AWS documentation (https://aws.amazon.com/cli/).
 
-* Node.js and Node Package Manager (npm) to manage AWS CDK applications. Download and install the latest version of Node.js from the official website.
+* Node.js and Node Package Manager (npm) to manage AWS CDK applications. Download and install the latest version of Node.js from the official website (this sample has been tested with node v22).
 
 * AWS CDK Toolkit to synthesize and deploy AWS CDK applications. Install it globally using npm.
 
