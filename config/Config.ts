@@ -32,20 +32,17 @@ export const DZ_ADMIN_PROJECT_DESCRIPTION = 'Project for Data Solution Administr
 
 export const CDK_EXEC_ROLE_ARN = 'arn:aws:iam::686723865281:role/cdk-hnb659fds-cfn-exec-role-686723865281-us-east-1';
 export const DZ_ADMIN_ROLE_ARN = 'arn:aws:iam::686723865281:role/aws-reserved/sso.amazonaws.com/eu-west-1/AWSReservedSSO_AdministratorAccess_b70db796e6768e6c';
+export const DZ_ADMINISTRATOR_EMAIL = 'marc+dzadmin@foo.com';
+export const DZ_COST_NOTIFICATION_EMAIL = 'marc+dzcost@foo.com';
 
-export const DZ_DOMAIN_OWNER_GROUP_ID = 'replace with your group ID';
-export const DZ_IAM_USER_ID_LIST   = ['TEST123'];  //allcaps
-export const DZ_MEMBER_ACCOUNT_LIST  = [];
-export const DZ_MEMBER_STACK_SET_EXEC_ROLE_LIST  = [''];
-export const DZ_ADMINISTRATOR_EMAIL = 'user+dzadmin@acmecorp.domain';
-export const DZ_COST_NOTIFICATION_EMAIL = 'user+dzcost@acmecorp.domain';
-
+export const DZ_DOMAIN_OWNER_GROUP_ID           = ''; //'replace with your group ID';
+export const DZ_IAM_USER_ID_LIST                = []; //['TEST123']; //allcaps
+export const DZ_MEMBER_ACCOUNT_LIST             = [];
+export const DZ_MEMBER_STACK_SET_EXEC_ROLE_LIST = [''];
 
 // Keep blank if you don't have member accounts
 export const DZ_MEMBER_ACCOUNT_CONFIG: memberAccountConfig = {
-
 };
-
 
 /*
 export const DZ_MEMBER_ACCOUNT_CONFIG: memberAccountConfig = {
