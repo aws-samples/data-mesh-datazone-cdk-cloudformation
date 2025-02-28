@@ -79,7 +79,7 @@ The following diagram displays the data mesh reference architecture based on Ama
 
 * AWS Command Line Interface (CLI) to manage your AWS services from the command line. Install the AWS CLI by following the instructions in the AWS documentation (https://aws.amazon.com/cli/).
 
-* Node.js and Node Package Manager (npm) to manage AWS CDK applications. Download and install the latest version of Node.js from the official website.
+* Node.js and Node Package Manager (npm) to manage AWS CDK applications. Download and install the latest version of Node.js from the official website (this sample has been tested with node v22).
 
 * AWS CDK Toolkit to synthesize and deploy AWS CDK applications. Install it globally using npm.
 

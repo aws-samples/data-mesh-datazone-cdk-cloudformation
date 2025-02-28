@@ -29,8 +29,10 @@ export const DZ_DOMAIN_DESCRIPTION = 'DataZone domain for CORP';
 export const DZ_DOMAIN_TAG = 'CorpDev';
 export const DZ_ADMIN_PROJECT_NAME = 'Admin';
 export const DZ_ADMIN_PROJECT_DESCRIPTION = 'Project for Data Solution Administrators';
-export const CDK_EXEC_ROLE_ARN = 'arn:aws:iam::111222333444:role/cdk-hnb659fds-cfn-exec-role-111222333444-us-east-1';
-export const DZ_ADMIN_ROLE_ARN = 'arn:aws:iam::111222333444:role/Admin';
+
+export const CDK_EXEC_ROLE_ARN = 'arn:aws:iam::686723865281:role/cdk-hnb659fds-cfn-exec-role-686723865281-us-east-1';
+export const DZ_ADMIN_ROLE_ARN = 'arn:aws:iam::686723865281:role/aws-reserved/sso.amazonaws.com/eu-west-1/AWSReservedSSO_AdministratorAccess_b70db796e6768e6c';
+
 export const DZ_DOMAIN_OWNER_GROUP_ID = 'replace with your group ID';
 export const DZ_IAM_USER_ID_LIST   = ['TEST123'];  //allcaps
 export const DZ_MEMBER_ACCOUNT_LIST  = [];

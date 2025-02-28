@@ -1,0 +1,3 @@
+.venv
+cdk.out
+node_modules
