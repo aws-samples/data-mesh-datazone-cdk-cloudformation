@@ -29,21 +29,20 @@ export const DZ_DOMAIN_DESCRIPTION = 'DataZone domain for CORP';
 export const DZ_DOMAIN_TAG = 'CorpDev';
 export const DZ_ADMIN_PROJECT_NAME = 'Admin';
 export const DZ_ADMIN_PROJECT_DESCRIPTION = 'Project for Data Solution Administrators';
-export const CDK_EXEC_ROLE_ARN = 'arn:aws:iam::111222333444:role/cdk-hnb659fds-cfn-exec-role-111222333444-us-east-1';
-export const DZ_ADMIN_ROLE_ARN = 'arn:aws:iam::111222333444:role/Admin';
-export const DZ_DOMAIN_OWNER_GROUP_ID = 'replace with your group ID';
-export const DZ_IAM_USER_ID_LIST   = ['TEST123'];  //allcaps
-export const DZ_MEMBER_ACCOUNT_LIST  = [];
-export const DZ_MEMBER_STACK_SET_EXEC_ROLE_LIST  = [''];
-export const DZ_ADMINISTRATOR_EMAIL = 'user+dzadmin@acmecorp.domain';
-export const DZ_COST_NOTIFICATION_EMAIL = 'user+dzcost@acmecorp.domain';
 
+export const CDK_EXEC_ROLE_ARN = 'arn:aws:iam::...:role/cdk-...-cfn-exec-role-...-us-east-1';
+export const DZ_ADMIN_ROLE_ARN = 'arn:aws:iam::...:role/aws-reserved/sso.amazonaws.com/eu-west-1/...';
+export const DZ_ADMINISTRATOR_EMAIL = 'foo+dzadmin@foo.com';
+export const DZ_COST_NOTIFICATION_EMAIL = 'foo+dzcost@foo.com';
+
+export const DZ_DOMAIN_OWNER_GROUP_ID           = ''; //'replace with your group ID';
+export const DZ_IAM_USER_ID_LIST                = []; //['TEST123']; //allcaps
+export const DZ_MEMBER_ACCOUNT_LIST             = [];
+export const DZ_MEMBER_STACK_SET_EXEC_ROLE_LIST = [''];
 
 // Keep blank if you don't have member accounts
 export const DZ_MEMBER_ACCOUNT_CONFIG: memberAccountConfig = {
-
 };
-
 
 /*
 export const DZ_MEMBER_ACCOUNT_CONFIG: memberAccountConfig = {

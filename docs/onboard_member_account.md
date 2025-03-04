@@ -1,14 +1,24 @@
 # Onboard new member account 
 
-1. Deploy the AWS CloudFormation template located at lib/cfn-templates/DzDataMeshCfnStackSetExecutionRole.yaml in the member account with the following input parameters.
+At the moment DzDataMeshCfnStackSetExecutionRole.yaml assumes DzDataMeshCfnStackSetAdminRole exists in the governance account.  
+
+1. Deploy the AWS CloudFormation template located at lib/cfn-templates/DzDataMeshCfnStackSetExecutionRole.yaml in the member account with the appropriate input parameters.
+
+DataMeshApplicationName - the name you configured in Config.ts  
+GovernanceAccountID - Account id of the governance account  
+DataZoneKMSKeyID - Id of the AWS Key Management Service (KMS) key, that encrypts the DataZone metadata  
+NotificationQueueName - Name of the Amazon SQS notification queue in the governance account  
 
 ```bash
-GovernanceAccountID - Account id of the governance account. 
-DataZoneKMSKeyID - Id of the AWS Key Management Service (KMS) key, that encrypts the DataZone metadata. 
-NotificationQueueName - Name of the Amazon SQS notification queue in the governance account
+aws cloudformation deploy \
+    --template-file ./lib/cfn-templates/DzDataMeshCfnStackSetExecutionRole.yaml \
+    --stack-name DzDataMeshCfnStackSetExecutionRoleStack \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides DataMeshApplicationName=dz-data-mesh DataZoneKMSKeyID=... GovernanceAccountID=... NotificationQueueName=... \
+    --region us-east-1
 ```
 
-2. Update the list of AWS CloudFormation StackSet execution role ARNs for the member accounts.
+2. Update the list of AWS CloudFormation StackSet execution role ARNs for the member accounts in Config.ts.
 
 ```bash
 DZ_MEMBER_STACK_SET_EXEC_ROLE_LIST  - List of Stack set execution role arns for the member accounts.
