@@ -1,5 +1,10 @@
 # Deploy resources in the Central Governance Account
 
+The sample assumes the AmazonDataZoneDomainExecution exists, meaning you created a Data Zone domain with the console at least once.  
+DzDataMeshHelperStack is creating lambdas assuming the role captured in CDK_EXEC_ROLE_ARN.  
+This role should have a trust relationship with "lambda.amazonaws.com".  
+DzDataMeshGovInfraStack assumes you already activated the datalake blueprint using the console for another domain so you have default roles like AmazonDataZoneProvisioning-'account'.  
+
 1. In the ```config/Config.ts``` file, modify the following parameters.
 
 ```bash
