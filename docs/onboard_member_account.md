@@ -1,5 +1,7 @@
 # Onboard new member account 
 
+At the moment DzDataMeshCfnStackSetExecutionRole.yaml assumes DzDataMeshCfnStackSetAdminRole exists in the governance account.  
+
 1. Deploy the AWS CloudFormation template located at lib/cfn-templates/DzDataMeshCfnStackSetExecutionRole.yaml in the member account with the appropriate input parameters.
 
 DataMeshApplicationName - the name you configured in Config.ts  
