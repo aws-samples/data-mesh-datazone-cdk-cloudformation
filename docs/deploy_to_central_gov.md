@@ -38,3 +38,7 @@ npx cdk synth
 ```bash
 npx cdk deploy --all
 ```
+
+7. Confirm subscriptions to the SNS topics
+
+Check your emails and click on the received links to confirm the subscriptions and receive future notifications.
